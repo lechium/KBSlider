@@ -308,7 +308,7 @@
 - (void)setUpMinimumTrackViewConstraints {
     _minimumTrackView.translatesAutoresizingMaskIntoConstraints = false;
     [_minimumTrackView.leadingAnchor constraintEqualToAnchor:_trackView.leadingAnchor].active = true;
-    [_minimumTrackView.trailingAnchor constraintEqualToAnchor:_trackView.trailingAnchor].active = true;
+    [_minimumTrackView.trailingAnchor constraintEqualToAnchor:_thumbView.centerXAnchor].active = true;
     [_minimumTrackView.centerYAnchor constraintEqualToAnchor:_trackView.centerYAnchor].active = true;
     [_minimumTrackView.heightAnchor constraintEqualToConstant:_trackViewHeight].active = true;
     
@@ -316,7 +316,7 @@
 
 - (void)setUpMaximumTrackViewConstraints {
     _maximumTrackView.translatesAutoresizingMaskIntoConstraints = false;
-    [_maximumTrackView.leadingAnchor constraintEqualToAnchor:_trackView.leadingAnchor].active = true;
+    [_maximumTrackView.leadingAnchor constraintEqualToAnchor:_thumbView.centerXAnchor].active = true;
     [_maximumTrackView.trailingAnchor constraintEqualToAnchor:_trackView.trailingAnchor].active = true;
     [_maximumTrackView.centerYAnchor constraintEqualToAnchor:_trackView.centerYAnchor].active = true;
     [_maximumTrackView.heightAnchor constraintEqualToConstant:_trackViewHeight].active = true;
