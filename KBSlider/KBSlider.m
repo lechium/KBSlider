@@ -673,7 +673,8 @@
 - (void)leftTapWasTriggered {
     
     CGFloat newValue = [self value]-_stepValue;
-    [self setValue:newValue];
+    [self setCurrentTime:newValue];
+    [self setValue:newValue animated:true];
     [self fadeInIfNecessary];
 }
 
@@ -687,7 +688,8 @@
 
 - (void)rightTapWasTriggered {
     CGFloat newValue = [self value]+_stepValue;
-    [self setValue:newValue];
+    [self setCurrentTime:newValue];
+    [self setValue:newValue animated:true];
     [self fadeInIfNecessary];
 }
 
