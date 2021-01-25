@@ -61,8 +61,7 @@
 		325D7AF425965E2600CC6B10 /* KBSlider */ = {
 			isa = PBXGroup;
 			children = (
-				325D7B0B25965E6600CC6B10 /* KBSlider.h */,
-				325D7B0C25965E6600CC6B10 /* KBSlider.m */,
+				32C5850925BF89A00021C9FC /* Slider */,
 				325D7AF525965E2600CC6B10 /* AppDelegate.h */,
 				325D7AF625965E2600CC6B10 /* AppDelegate.m */,
 				325D7AF825965E2600CC6B10 /* ViewController.h */,
@@ -74,6 +73,15 @@
 				325D7B0425965E2800CC6B10 /* main.m */,
 			);
 			path = KBSlider;
+			sourceTree = "<group>";
+		};
+		32C5850925BF89A00021C9FC /* Slider */ = {
+			isa = PBXGroup;
+			children = (
+				325D7B0B25965E6600CC6B10 /* KBSlider.h */,
+				325D7B0C25965E6600CC6B10 /* KBSlider.m */,
+			);
+			path = Slider;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
