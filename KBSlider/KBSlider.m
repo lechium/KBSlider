@@ -20,6 +20,9 @@
     BOOL _isEnabled;
     BOOL _isSelected;
     BOOL _isHighlighted;
+    
+    KBSliderMode _sliderMode;
+    
 }
 
 @property CGFloat trackViewHeight;
@@ -99,6 +102,17 @@
     _stepValue = _defaultStepValue;
     [self setEnabled:true];
     
+}
+
+- (KBSliderMode)sliderMode {
+    return _sliderMode;
+}
+
+- (void)setSliderMode:(KBSliderMode)sliderMode {
+    _sliderMode = sliderMode;
+    [self setUpThumbView];
+    [self setUpThumbViewConstraints];
+    [self updateStateDependantViews];
 }
 
 - (void)setSelected:(BOOL)selected {
@@ -267,8 +281,14 @@
 }
 
 - (void)setUpThumbView {
+    if (_thumbView){
+        [_thumbView removeFromSuperview];
+        _thumbView = nil;
+    }
     _thumbView = [UIImageView new];
-    _thumbView.layer.cornerRadius = _thumbSize/2;
+    if (self.sliderMode != KBSliderModeTransport){ //don't want to make transport
+        _thumbView.layer.cornerRadius = _thumbSize/2;
+    }
     _thumbView.backgroundColor = _thumbTintColor;
     [self addSubview:_thumbView];
 }
@@ -326,8 +346,13 @@
 - (void)setUpThumbViewConstraints {
     _thumbView.translatesAutoresizingMaskIntoConstraints = false;
     [_thumbView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = true;
-    [_thumbView.heightAnchor constraintEqualToConstant:_thumbSize].active = true;
-    [_thumbView.widthAnchor constraintEqualToConstant:_thumbSize].active = true;
+    if (_sliderMode == KBSliderModeTransport){
+        [_thumbView.heightAnchor constraintEqualToConstant:30].active = true;
+        [_thumbView.widthAnchor constraintEqualToConstant:1].active = true;
+    } else {
+        [_thumbView.heightAnchor constraintEqualToConstant:_thumbSize].active = true;
+        [_thumbView.widthAnchor constraintEqualToConstant:_thumbSize].active = true;
+    }
     _thumbViewCenterXConstraint = [_thumbView.centerXAnchor constraintEqualToAnchor:_trackView.leadingAnchor constant:self.value];
     _thumbViewCenterXConstraint.active = true;
 }
@@ -351,23 +376,11 @@
 - (void)updateStateDependantViews {
     
     UIImage *currentMinImage = _minimumTrackViewImages[[NSNumber numberWithUnsignedInteger:self.state]];
-    if (currentMinImage){
-        _minimumTrackView.image = currentMinImage;
-    } else {
-        _minimumTrackView.image = _minimumTrackViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
-    }
+    _minimumTrackView.image = currentMinImage ? currentMinImage : _minimumTrackViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
     UIImage *currentMaxImage = _maximumTrackViewImages[[NSNumber numberWithUnsignedInteger:self.state]];
-    if (currentMaxImage){
-        _maximumTrackView.image = currentMaxImage;
-    } else {
-        _maximumTrackView.image = _maximumTrackViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
-    }
+    _maximumTrackView.image = currentMaxImage ? currentMaxImage : _maximumTrackViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
     UIImage *currentThumbImage = _thumbViewImages[[NSNumber numberWithUnsignedInteger:self.state]];
-    if (currentThumbImage){
-        _thumbView.image = currentThumbImage;
-    } else {
-        _thumbView.image = _thumbViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
-    }
+    _thumbView.image = currentThumbImage ? currentThumbImage : _thumbViewImages[[NSNumber numberWithUnsignedInteger:UIControlStateNormal]];
     
     if ([self isFocused]){
         self.transform = CGAffineTransformMakeScale(_focusScaleFactor, _focusScaleFactor);
@@ -458,6 +471,7 @@
         case UIGestureRecognizerStateCancelled:
             _thumbViewCenterXConstraintConstant = _thumbViewCenterXConstraint.constant;
             if (fabs(velocity) > _fineTunningVelocityThreshold){
+                // let direction: Float = velocity > 0 ? 1 : -1
                 CGFloat direction = velocity > 0 ? 1 : -1;
                 _deceleratingVelocity = fabs(velocity) > _decelerationMaxVelocity ? _decelerationMaxVelocity * direction : velocity;
                 _deceleratingTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(handleDeceleratingTimer:) userInfo:nil repeats:true];

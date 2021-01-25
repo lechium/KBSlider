@@ -27,6 +27,7 @@
     _kbSlider.maximumValue = 100;
     _kbSlider.stepValue = 10;
     _kbSlider.minimumTrackTintColor = [UIColor orangeColor];
+    _kbSlider.sliderMode = KBSliderModeTransport;
 }
 
 

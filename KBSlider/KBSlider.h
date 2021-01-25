@@ -18,6 +18,13 @@ typedef NS_ENUM(NSInteger, DPadState) {
     DPadStateDown,
 };
 
+//KBSlider exclusives!
+
+typedef NS_ENUM(NSInteger, KBSliderMode) {
+    KBSliderModeDefault, //normal slider
+    KBSliderModeTransport, //tranport mode like for movie playback control
+};
+
 
 @interface KBSlider : UIControl
 
@@ -35,6 +42,8 @@ typedef NS_ENUM(NSInteger, DPadState) {
 @property UIImage *currentMaximumTrackImage;
 
 @property CGFloat storedValue;
+
+@property KBSliderMode sliderMode;
 
 - (UIImage *)currentThumbImage;
 - (void)setValue:(CGFloat)value animated:(BOOL)animated;
