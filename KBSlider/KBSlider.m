@@ -26,7 +26,7 @@
     UILabel *currentTimeLabel;
     NSTimeInterval _currentTime;
     NSTimeInterval _totalDuration;
-    
+    NSTimer *_fadeOutTimer;
 }
 
 @property CGFloat trackViewHeight;
@@ -108,6 +108,70 @@
     
 }
 
+- (void)_startFadeOutTimer {
+    [self stopFadeOutTimer];
+    _fadeOutTimer = [NSTimer scheduledTimerWithTimeInterval:3.0 repeats:false block:^(NSTimer * _Nonnull timer) {
+        [self fadeOut];
+    }];
+}
+
+- (void)stopFadeOutTimer {
+    if (_fadeOutTimer){
+        [_fadeOutTimer invalidate];
+        _fadeOutTimer = nil;
+    }
+}
+
+//the views we need to show or hide as necessary
+- (NSArray *)_viewsToAdjust {
+    if (!self.thumbView){
+        return nil;
+    }
+    if (self.sliderMode == KBSliderModeTransport){
+        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel];
+    } else {
+        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView];
+    }
+}
+
+- (BOOL)_isVisible {
+    NSArray *_views = [self _viewsToAdjust];
+    if (_views.count >0){
+        UIView *first = [_views firstObject];
+        return first.alpha == 1.0;
+    }
+    return false;
+}
+
+- (void)_toggleVisibleViews:(BOOL)hide {
+    [[self _viewsToAdjust] enumerateObjectsUsingBlock:^(UIView  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (hide){
+            obj.alpha = 0;
+        } else {
+            obj.alpha = 1;
+        }
+    }];
+}
+
+- (void)fadeOut {
+    [UIView animateWithDuration:3.0 animations:^{
+        [self _toggleVisibleViews:true];
+        //self.hidden = true;
+        //self.enabled = false;
+        //[self setNeedsFocusUpdate];
+    }];
+}
+
+- (void)fadeIn {
+    [UIView animateWithDuration:0.1 animations:^{
+        [self _toggleVisibleViews:false];
+        //self.hidden = false;
+        [self _startFadeOutTimer];
+        //self.enabled = true;
+        //[self setNeedsFocusUpdate];
+    }];
+}
+
 + (NSDateComponentsFormatter *)sharedTimeFormatter {
     static dispatch_once_t minOnceToken;
     static NSDateComponentsFormatter *sharedTime = nil;
@@ -157,6 +221,13 @@
     if (durationLabel){
         durationLabel.text = [self remainingTimeFormatted];
     }
+    if (CGRectIntersectsRect(durationLabel.frame, currentTimeLabel.frame)){
+        durationLabel.alpha = 0.0;
+    } else {
+        if ([self _isVisible]){
+            durationLabel.alpha = 1.0;
+        }
+    }
 }
 
 - (KBSliderMode)sliderMode {
@@ -168,6 +239,9 @@
     [self setUpThumbView];
     [self setUpThumbViewConstraints];
     [self updateStateDependantViews];
+    if (sliderMode == KBSliderModeDefault){
+        [self fadeInIfNecessary];
+    }
 }
 
 - (void)setSelected:(BOOL)selected {
@@ -211,8 +285,18 @@
     if(isnan(offset)){
         return;
     }
-    NSLog(@"[KBSlider] attempting to set offset value: %f", offset);
+    //NSLog(@"[KBSlider] attempting to set offset value: %f", offset);
     _thumbViewCenterXConstraint.constant = offset;
+}
+
+- (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    [super pressesEnded:presses withEvent:event];
+    for (UIPress *item in presses) {
+        KBSLog(@"pressedEnded type: %ld", item.type);
+        if (item.type == UIPressTypeSelect){
+        }
+        
+    }
 }
 
 - (CGFloat)maximumValue {
@@ -473,6 +557,11 @@
     } else {
         self.transform = CGAffineTransformIdentity;
     }
+    if (self.sliderMode == KBSliderModeTransport){
+        if ([self _isVisible]){
+            [self _startFadeOutTimer];
+        }
+    }
     
 }
 
@@ -531,6 +620,12 @@
 
 - (void)panGestureWasTriggered:(UIPanGestureRecognizer *)panGestureRecognizer {
     
+    LOG_SELF;
+    if (self.sliderMode == KBSliderModeTransport){
+        if (![self _isVisible]){
+            [self fadeIn];
+        }
+    }
     if ([self isVerticalGesture:panGestureRecognizer]){
         return;
     }
@@ -576,14 +671,25 @@
     
     CGFloat newValue = [self value]-_stepValue;
     [self setValue:newValue];
+    [self fadeInIfNecessary];
+}
+
+- (void)fadeInIfNecessary {
+    if (self.sliderMode == KBSliderModeTransport){
+        if (![self _isVisible]){
+            [self fadeIn];
+        }
+    }
 }
 
 - (void)rightTapWasTriggered {
     CGFloat newValue = [self value]+_stepValue;
     [self setValue:newValue];
+    [self fadeInIfNecessary];
 }
 
 - (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    [self fadeInIfNecessary];
     for (UIPress *press in presses){
         switch (press.type) {
             case UIPressTypeSelect:

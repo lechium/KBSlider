@@ -61,4 +61,6 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 - (UIImage *)thumbImageForState:(UIControlState)state;
 @end
 
+#define LOG_SELF        NSLog(@"[KBSlider] %@ %@", self, NSStringFromSelector(_cmd))
+#define KBSLog(format, ...) NSLog(@"[KBSlider] %@",[NSString stringWithFormat:format, ## __VA_ARGS__]);
 NS_ASSUME_NONNULL_END
