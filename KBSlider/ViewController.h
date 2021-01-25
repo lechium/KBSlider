@@ -12,6 +12,6 @@
 
 @property IBOutlet KBSlider *kbSlider;
 @property IBOutlet UILabel *valueLabel;
-
+- (IBAction)toggleMode:(id)sender;
 @end
 

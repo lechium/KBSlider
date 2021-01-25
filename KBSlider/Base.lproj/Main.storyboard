@@ -20,10 +20,13 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="k5l-Fv-iR2">
-                                <rect key="frame" x="863" y="342" width="195" height="86"/>
+                                <rect key="frame" x="813" y="342" width="296" height="86"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <inset key="contentEdgeInsets" minX="40" minY="20" maxX="40" maxY="20"/>
-                                <state key="normal" title="Button"/>
+                                <state key="normal" title="Toggle Mode"/>
+                                <connections>
+                                    <action selector="toggleMode:" destination="BYZ-38-t0r" eventType="primaryActionTriggered" id="OvI-Kq-v1D"/>
+                                </connections>
                             </button>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5Nx-J6-5pE" customClass="KBSlider">
                                 <rect key="frame" x="366" y="514" width="1188" height="53"/>

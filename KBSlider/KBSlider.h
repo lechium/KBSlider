@@ -42,6 +42,9 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 @property UIImage *currentMaximumTrackImage;
 
 @property CGFloat storedValue;
+@property NSTimeInterval currentTime; //only applicable in the transport mode
+@property NSTimeInterval totalDuration; //only applicable in the transport mode
+
 
 @property KBSliderMode sliderMode;
 

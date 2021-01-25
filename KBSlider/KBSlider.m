@@ -22,6 +22,10 @@
     BOOL _isHighlighted;
     
     KBSliderMode _sliderMode;
+    UILabel *durationLabel;
+    UILabel *currentTimeLabel;
+    NSTimeInterval _currentTime;
+    NSTimeInterval _totalDuration;
     
 }
 
@@ -102,6 +106,27 @@
     _stepValue = _defaultStepValue;
     [self setEnabled:true];
     
+}
+
+- (NSTimeInterval)totalDuration {
+    return _totalDuration;
+}
+
+- (void)setTotalDuration:(NSTimeInterval)totalDuration {
+    _totalDuration = totalDuration;
+    [self setMaximumValue:totalDuration];
+}
+
+- (NSTimeInterval)currentTime {
+    return _currentTime;
+}
+
+- (void)setCurrentTime:(NSTimeInterval)currentTime {
+    _currentTime = currentTime;
+    [self setValue:currentTime];
+    if (currentTimeLabel){
+        currentTimeLabel.text = [NSString stringWithFormat:@"%.0f", _currentTime];
+    }
 }
 
 - (KBSliderMode)sliderMode {
@@ -286,13 +311,27 @@
         _thumbView = nil;
     }
     _thumbView = [UIImageView new];
-    if (self.sliderMode != KBSliderModeTransport){ //don't want to make transport
-        _thumbView.layer.cornerRadius = _thumbSize/2;
-    }
     _thumbView.backgroundColor = _thumbTintColor;
     [self addSubview:_thumbView];
+    if (self.sliderMode != KBSliderModeTransport){ //don't want to make transport
+        _thumbView.layer.cornerRadius = _thumbSize/2;
+    } else {
+        [self setUpTransportViews];
+    }
 }
 
+- (void)setUpTransportViews {
+    if (currentTimeLabel){
+        [currentTimeLabel removeFromSuperview];
+        currentTimeLabel = nil;
+    }
+    currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false;
+    [self addSubview:currentTimeLabel];
+    [currentTimeLabel.centerXAnchor constraintEqualToAnchor:self.thumbView.centerXAnchor].active = true;
+    [currentTimeLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
+    currentTimeLabel.text = [NSString stringWithFormat:@"%.0f", _currentTime];
+}
 
 - (void)setUpTrackView {
     _trackView = [UIImageView new];
