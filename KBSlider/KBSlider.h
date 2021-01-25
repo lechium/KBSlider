@@ -45,9 +45,12 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 @property NSTimeInterval currentTime; //only applicable in the transport mode
 @property NSTimeInterval totalDuration; //only applicable in the transport mode
 
-
 @property KBSliderMode sliderMode;
 
++ (NSDateComponentsFormatter *)sharedTimeFormatter;
+- (NSTimeInterval)remainingTime;
+- (NSString *)remainingTimeFormatted;
+- (NSString *)elapsedTimeFormatted;
 - (UIImage *)currentThumbImage;
 - (void)setValue:(CGFloat)value animated:(BOOL)animated;
 - (void)setMinimumTrackImage:(UIImage *)minTrackImage forState:(UIControlState)state;

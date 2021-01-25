@@ -108,6 +108,30 @@
     
 }
 
++ (NSDateComponentsFormatter *)sharedTimeFormatter {
+    static dispatch_once_t minOnceToken;
+    static NSDateComponentsFormatter *sharedTime = nil;
+    if(sharedTime == nil) {
+        dispatch_once(&minOnceToken, ^{
+            sharedTime = [[NSDateComponentsFormatter alloc] init];
+            sharedTime.unitsStyle = NSDateComponentsFormatterUnitsStylePositional;
+        });
+    }
+    return sharedTime;
+}
+
+- (NSTimeInterval)remainingTime {
+    return -(self.totalDuration - self.currentTime);
+}
+
+- (NSString *)remainingTimeFormatted {
+    return [[KBSlider sharedTimeFormatter] stringFromTimeInterval:self.remainingTime];
+}
+
+- (NSString *)elapsedTimeFormatted {
+    return [[KBSlider sharedTimeFormatter] stringFromTimeInterval:self.currentTime];
+}
+
 - (NSTimeInterval)totalDuration {
     return _totalDuration;
 }
@@ -116,7 +140,7 @@
     _totalDuration = totalDuration;
     [self setMaximumValue:totalDuration];
     if (durationLabel){
-        durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
+        durationLabel.text = [self remainingTimeFormatted];
     }
 }
 
@@ -128,7 +152,10 @@
     _currentTime = currentTime;
     [self setValue:currentTime];
     if (currentTimeLabel){
-        currentTimeLabel.text = [NSString stringWithFormat:@"%.0f", _currentTime];
+        currentTimeLabel.text = [self elapsedTimeFormatted];
+    }
+    if (durationLabel){
+        durationLabel.text = [self remainingTimeFormatted];
     }
 }
 
@@ -347,7 +374,7 @@
     durationLabel.textAlignment = NSTextAlignmentCenter;
     [currentTimeLabel.centerXAnchor constraintEqualToAnchor:self.thumbView.centerXAnchor].active = true;
     [currentTimeLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
-    currentTimeLabel.text = [NSString stringWithFormat:@"%.0f", _currentTime];
+    currentTimeLabel.text = [self elapsedTimeFormatted];
     [durationLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
     [durationLabel.centerXAnchor constraintEqualToAnchor:self.trackView.trailingAnchor].active = true;
     durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
