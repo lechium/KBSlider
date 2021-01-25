@@ -241,6 +241,9 @@
     [self updateStateDependantViews];
     if (sliderMode == KBSliderModeDefault){
         [self fadeInIfNecessary];
+        self.stepValue = _defaultStepValue;
+    } else {
+        self.stepValue = 10;
     }
 }
 
