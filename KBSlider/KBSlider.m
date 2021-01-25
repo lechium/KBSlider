@@ -115,6 +115,9 @@
 - (void)setTotalDuration:(NSTimeInterval)totalDuration {
     _totalDuration = totalDuration;
     [self setMaximumValue:totalDuration];
+    if (durationLabel){
+        durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
+    }
 }
 
 - (NSTimeInterval)currentTime {
@@ -315,22 +318,39 @@
     [self addSubview:_thumbView];
     if (self.sliderMode != KBSliderModeTransport){ //don't want to make transport
         _thumbView.layer.cornerRadius = _thumbSize/2;
+        [self removeTransportViewsIfNecessary];
     } else {
         [self setUpTransportViews];
     }
 }
 
-- (void)setUpTransportViews {
+- (void)removeTransportViewsIfNecessary {
     if (currentTimeLabel){
-        [currentTimeLabel removeFromSuperview];
-        currentTimeLabel = nil;
-    }
+           [currentTimeLabel removeFromSuperview];
+           currentTimeLabel = nil;
+       }
+       if (durationLabel){
+           [durationLabel removeFromSuperview];
+           durationLabel = nil;
+       }
+}
+
+- (void)setUpTransportViews {
+    
+    [self removeTransportViewsIfNecessary];
     currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false;
     [self addSubview:currentTimeLabel];
+    durationLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    durationLabel.translatesAutoresizingMaskIntoConstraints = false;
+    [self addSubview:durationLabel];
+    durationLabel.textAlignment = NSTextAlignmentCenter;
     [currentTimeLabel.centerXAnchor constraintEqualToAnchor:self.thumbView.centerXAnchor].active = true;
     [currentTimeLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
     currentTimeLabel.text = [NSString stringWithFormat:@"%.0f", _currentTime];
+    [durationLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
+    [durationLabel.centerXAnchor constraintEqualToAnchor:self.trackView.trailingAnchor].active = true;
+    durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
 }
 
 - (void)setUpTrackView {
