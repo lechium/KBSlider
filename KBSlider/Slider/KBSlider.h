@@ -10,6 +10,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface KBGradientView: UIView
+@property(nonatomic, readonly, strong) CAGradientLayer *layer;
++(instancetype)standardGradientView;
+@end
+
 typedef NS_ENUM(NSInteger, DPadState) {
     DPadStateSelect,
     DPadStateRight,

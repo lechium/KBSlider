@@ -8,6 +8,24 @@
 
 #import "KBSlider.h"
 #import <GameController/GameController.h>
+@implementation KBGradientView
+@dynamic layer;
+
++ (Class)layerClass {
+    return CAGradientLayer.class;
+}
+
++(instancetype)standardGradientView {
+    KBGradientView *view = [[KBGradientView alloc] initWithFrame:CGRectMake(-100, 0, 1920+200, 200)];
+    view.layer.startPoint = CGPointMake(0.5, 0);
+    view.layer.endPoint = CGPointMake(0.5, 1);
+    view.layer.type = kCAGradientLayerAxial;
+    view.layer.colors = @[(id)[UIColor colorWithWhite:0 alpha:0].CGColor,
+                          (id)[UIColor colorWithWhite:0 alpha:0.6].CGColor];
+    return view;
+}
+
+@end
 
 @interface KBSlider() {
     CGFloat _minimumValue;
@@ -23,6 +41,7 @@
     BOOL _isHighlighted;
     BOOL _defaultFadeOut;
     
+    KBGradientView *gradient;
     KBSliderMode _sliderMode;
     UILabel *durationLabel;
     UILabel *currentTimeLabel;
@@ -149,7 +168,7 @@
         return nil;
     }
     if (self.sliderMode == KBSliderModeTransport){
-        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel];
+        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel, gradient, _scrubView];
     } else {
         return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView];
     }
@@ -175,7 +194,7 @@
 }
 
 - (void)fadeOut {
-    if (!_fadeOutTransport) return;
+    if (!_fadeOutTransport || self.isScrubbing) return;
     [UIView animateWithDuration:3.0 animations:^{
         [self _toggleVisibleViews:true];
     }];
@@ -550,6 +569,8 @@
     durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
     [self setUpScrubView];
     [self setUpScrubViewConstraints];
+    gradient = [KBGradientView standardGradientView];
+    [self insertSubview:gradient atIndex:0];
 }
 
 - (void)setUpTrackView {
@@ -665,6 +686,7 @@
 
 - (void)controllerConnected:(NSNotification *)n {
     GCController *controller = [n object];
+    KBSLog(@"controller: %@ micro: %@", controller, [controller microGamepad]);
     GCMicroGamepad *micro = [controller microGamepad];
     if (!micro)return;
     
@@ -712,6 +734,7 @@
 
 - (void)stopDeceleratingTimer {
     LOG_SELF;
+    //NSLog(@"%@", [NSThread callStackSymbols]);
     [_deceleratingTimer invalidate];
     _deceleratingTimer = nil;
     _deceleratingVelocity = 0;
@@ -745,7 +768,7 @@
             [self fadeIn];
         }
         if (self.isPlaying){
-            NSLog(@"isplaying return");
+            //NSLog(@"isplaying return");
             return;
         }
     }
@@ -807,7 +830,7 @@
 }
 
 - (void)leftTapWasTriggered {
-    
+    if ([self shouldMoveScrubView]) return;
     CGFloat newValue = [self value]-_stepValue;
     [self setCurrentTime:newValue];
     [self setValue:newValue animated:true];
@@ -832,12 +855,14 @@
             self.isScrubbing = false;
             if (self.timeSelectedBlock){
                 self.timeSelectedBlock(self.scrubValue);
+                self.isPlaying = true;
             }
         }
     }
 }
 
 - (void)rightTapWasTriggered {
+    if ([self shouldMoveScrubView]) return;
     CGFloat newValue = [self value]+_stepValue;
     [self setCurrentTime:newValue];
     [self setValue:newValue animated:true];
