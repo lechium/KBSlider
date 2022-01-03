@@ -10,6 +10,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@interface NSThread (additions)
++ (NSArray *)stackFrameTruncatedTo:(NSInteger)offset;
+@end
+
 @interface KBGradientView: UIView
 @property(nonatomic, readonly, strong) CAGradientLayer *layer;
 +(instancetype)standardGradientView;
@@ -71,6 +75,7 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 - (UIImage *)thumbImageForState:(UIControlState)state;
 @end
 
-#define LOG_SELF        NSLog(@"[KBSlider] %@ %@", self, NSStringFromSelector(_cmd))
-#define KBSLog(format, ...) NSLog(@"[KBSlider] %@",[NSString stringWithFormat:format, ## __VA_ARGS__]);
+#define DLog(format, ...) CFShow((__bridge CFStringRef)[NSString stringWithFormat:format, ## __VA_ARGS__]);
+#define LOG_SELF        DLog(@"[KBSlider] %@ %@", self, NSStringFromSelector(_cmd))
+#define KBSLog(format, ...) DLog(@"[KBSlider] %@",[NSString stringWithFormat:format, ## __VA_ARGS__]);
 NS_ASSUME_NONNULL_END

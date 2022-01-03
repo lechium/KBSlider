@@ -8,6 +8,16 @@
 
 #import "KBSlider.h"
 #import <GameController/GameController.h>
+
+@implementation NSThread (additions)
++ (NSArray *)stackFrameTruncatedTo:(NSInteger)offset {
+    if ([[NSThread callStackSymbols] count] < offset){
+        return [NSThread callStackSymbols];
+    }
+    return [[NSThread callStackSymbols] subarrayWithRange:NSMakeRange(0, offset)];
+}
+@end
+
 @implementation KBGradientView
 @dynamic layer;
 
@@ -194,7 +204,13 @@
 }
 
 - (void)fadeOut {
-    if (!_fadeOutTransport || self.isScrubbing) return;
+    if (!_fadeOutTransport) return;
+    
+    if ([self isScrubbing]){
+        [self _startFadeOutTimer];
+        return;
+    }
+    
     [UIView animateWithDuration:3.0 animations:^{
         [self _toggleVisibleViews:true];
     }];
@@ -549,6 +565,10 @@
         [durationLabel removeFromSuperview];
         durationLabel = nil;
     }
+    if (gradient) {
+        [gradient removeFromSuperview];
+        gradient = nil;
+    }
 }
 
 - (void)setUpTransportViews {
@@ -557,8 +577,10 @@
     currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false;
     [self addSubview:currentTimeLabel];
+    [currentTimeLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     durationLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     durationLabel.translatesAutoresizingMaskIntoConstraints = false;
+    [durationLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     [self addSubview:durationLabel];
     durationLabel.textAlignment = NSTextAlignmentCenter;
     [currentTimeLabel.centerXAnchor constraintEqualToAnchor:self.thumbView.centerXAnchor].active = true;
@@ -733,15 +755,11 @@
 }
 
 - (void)stopDeceleratingTimer {
-    LOG_SELF;
-    //NSLog(@"%@", [NSThread callStackSymbols]);
     [_deceleratingTimer invalidate];
     _deceleratingTimer = nil;
     _deceleratingVelocity = 0;
     if ([self shouldMoveScrubView] || !_deceleratingTimer) {
-        NSLog(@"dont do stuff here");
         return;
-        
     }
     [self sendActionsForControlEvents:UIControlEventValueChanged];
 }
@@ -850,6 +868,7 @@
 }
 
 - (void)triggerTransportTapIfNecessary {
+    [self stopDeceleratingTimer];
     if (_sliderMode == KBSliderModeTransport) {
         if (self.isScrubbing) {
             self.isScrubbing = false;
@@ -884,6 +903,10 @@
                     [self triggerTransportTapIfNecessary];
                     _panGestureRecognizer.enabled = false;
                 }
+                break;
+            case UIPressTypePlayPause:
+                [self triggerTransportTapIfNecessary];
+                _panGestureRecognizer.enabled = false;
                 break;
             default:
                 break;
