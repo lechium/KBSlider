@@ -30,6 +30,8 @@
     _kbSlider.isContinuous = false;
     _kbSlider.minimumTrackTintColor = [UIColor orangeColor];
     _kbSlider.fadeOutTransport = false;
+    _kbSlider.sliderMode = KBSliderModeTransport;
+    //_kbSlider.displaysCurrentTime = true;
     _kbSlider.timeSelectedBlock = ^(CGFloat currentTime) {
         NSLog(@"scrubbing time selected: %f actualTime: %f", currentTime, _kbSlider.value);
         _kbSlider.value = currentTime;
@@ -51,7 +53,7 @@
 - (void)toggleMode:(id)sender {
     if (self.kbSlider.sliderMode == KBSliderModeDefault){
         self.kbSlider.sliderMode = KBSliderModeTransport;
-        [self.kbSlider setTotalDuration:120];
+        [self.kbSlider setTotalDuration:60*10];
         [self.kbSlider setCurrentTime:1.0];
         self.kbSlider.isPlaying = true;
         [self startTimer];
@@ -65,7 +67,7 @@
     [self stopTimer];
     self.simulatedPlaybackTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:true block:^(NSTimer * _Nonnull timer) {
         if (self.kbSlider.isPlaying){
-            NSLog(@"kbSlider currentTime: %f", self.kbSlider.currentTime);
+            //NSLog(@"kbSlider currentTime: %f", self.kbSlider.currentTime);
             if (self.kbSlider.currentTime+1 <= self.kbSlider.totalDuration){
                 self.kbSlider.currentTime++;
             } else {

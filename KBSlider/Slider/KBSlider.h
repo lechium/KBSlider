@@ -72,6 +72,8 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 @property KBSliderMode sliderMode;
 @property KBScrubMode scrubMode;
 @property (nonatomic, weak) AVPlayer *avPlayer; //optional
+@property BOOL displaysCurrentTime;
+@property BOOL displaysRemainingTime;
 
 + (NSDateComponentsFormatter *)sharedTimeFormatter;
 - (NSTimeInterval)remainingTime;

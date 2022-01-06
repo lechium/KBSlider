@@ -111,7 +111,7 @@
 }
 
 +(instancetype)standardGradientView {
-    KBGradientView *view = [[KBGradientView alloc] initWithFrame:CGRectMake(-100, 0, 1920+200, 200)];
+    KBGradientView *view = [[KBGradientView alloc] initWithFrame:CGRectMake(-100, -30, 1920+200, 220)];
     view.layer.startPoint = CGPointMake(0.5, 0);
     view.layer.endPoint = CGPointMake(0.5, 1);
     view.layer.type = kCAGradientLayerAxial;
@@ -149,6 +149,8 @@
     UIImageView *_rightHintImageView;
     KBScrubMode _scrubMode;
     NSLayoutConstraint *_trackViewHeightAnchor;
+    BOOL _displaysCurrentTime;
+    BOOL _displaysRemainingTime;
 }
 
 @property CGFloat trackViewHeight;
@@ -402,6 +404,19 @@
         [KBSlider sharedTimeFormatter].allowedUnits =  NSCalendarUnitMinute | NSCalendarUnitSecond;
     }
 }
+//@"h:mm:ss a"
++ (NSDateFormatter *)currentDateFormatter {
+    static dispatch_once_t minOnceToken;
+    static NSDateFormatter *dateFormatter = nil;
+    if(dateFormatter == nil) {
+        dispatch_once(&minOnceToken, ^{
+            dateFormatter = [[NSDateFormatter alloc] init];
+            dateFormatter.dateStyle = NSDateFormatterShortStyle;
+            dateFormatter.dateFormat = @"h:mm a";
+        });
+    }
+    return dateFormatter;
+}
 
 + (NSDateComponentsFormatter *)elapsedTimeFormatter {
     static dispatch_once_t minOnceToken;
@@ -431,8 +446,43 @@
     return sharedTime;
 }
 
+- (BOOL)displaysRemainingTime {
+    return _displaysRemainingTime;
+}
+
+- (void)setDisplaysRemainingTime:(BOOL)displaysRemainingTime {
+    _displaysRemainingTime = displaysRemainingTime;
+    if (displaysRemainingTime && _displaysCurrentTime) {
+        [self setDisplaysCurrentTime:false];
+    }
+    currentTimeLabel.text = [self elapsedTimeFormatted];
+    durationLabel.text = [self remainingTimeFormatted];
+}
+
+- (BOOL)displaysCurrentTime {
+    return _displaysCurrentTime;
+}
+
+- (void)setDisplaysCurrentTime:(BOOL)displaysCurrentTime {
+    _displaysCurrentTime = displaysCurrentTime;
+    if (displaysCurrentTime && _displaysRemainingTime) {
+        [self setDisplaysRemainingTime:false];
+    }
+    currentTimeLabel.text = [self currentDateFormatted];
+    durationLabel.text = [self finishDateFormatted];
+}
+
+
 - (NSTimeInterval)remainingTime {
     return -(self.totalDuration - self.currentTime);
+}
+
+- (NSString *)finishDateFormatted {
+    return [[KBSlider currentDateFormatter] stringFromDate:[[NSDate date] dateByAddingTimeInterval:fabs(self.remainingTime)]];
+}
+
+- (NSString *)currentDateFormatted {
+    return [[KBSlider currentDateFormatter] stringFromDate:[NSDate date]];
 }
 
 - (NSString *)remainingTimeFormatted {
@@ -470,10 +520,18 @@
     [self setValue:currentTime];
     [self _updateFormatters];
     if (currentTimeLabel){
-        currentTimeLabel.text = [self elapsedTimeFormatted];
+        if (self.displaysCurrentTime){
+            currentTimeLabel.text = [self currentDateFormatted];
+        } else {
+            currentTimeLabel.text = [self elapsedTimeFormatted];
+        }
     }
     if (durationLabel){
-        durationLabel.text = [self remainingTimeFormatted];
+        if (self.displaysCurrentTime){
+            durationLabel.text = [self finishDateFormatted];
+        } else {
+            durationLabel.text = [self remainingTimeFormatted];
+        }
     }
     if (!self.isScrubbing) {
         self.scrubValue = currentTime;
@@ -782,7 +840,7 @@
     currentTimeLabel.layer.masksToBounds = true;
     currentTimeLabel.backgroundColor = [UIColor whiteColor];
     currentTimeLabel.textColor = [UIColor blackColor];
-    [currentTimeLabel.widthAnchor constraintGreaterThanOrEqualToConstant:76].active = true;
+    [currentTimeLabel.widthAnchor constraintGreaterThanOrEqualToConstant:100].active = true;
     [currentTimeLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     durationLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     durationLabel.translatesAutoresizingMaskIntoConstraints = false;
