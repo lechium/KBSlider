@@ -10,6 +10,7 @@
 
 @interface ViewController ()
 @property NSTimer *simulatedPlaybackTimer;
+@property BOOL ignoreNextEvent;
 @end
 
 @implementation ViewController
@@ -33,6 +34,8 @@
         NSLog(@"scrubbing time selected: %f actualTime: %f", currentTime, _kbSlider.value);
         _kbSlider.value = currentTime;
         _kbSlider.currentTime = currentTime;
+        _kbSlider.isPlaying = true;
+        _ignoreNextEvent = true;
         [self startTimer];
     };
 }
@@ -69,6 +72,7 @@
                 [self stopTimer];
             }
         } else {
+            NSLog(@"kbslider isnt playing...?");
             [self stopTimer];
         }
     }];
@@ -82,6 +86,11 @@
 }
 
 - (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    if (self.ignoreNextEvent) {
+        DLog(@"ignore next event");
+        self.ignoreNextEvent = false;
+        return;
+    }
     for (UIPress *press in presses) {
         switch (press.type){
                 

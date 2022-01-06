@@ -8,6 +8,7 @@
 
 #import "KBSlider.h"
 #import <GameController/GameController.h>
+#import "KBSliderImages.h"
 
 @implementation NSThread (additions)
 + (NSArray *)stackFrameTruncatedTo:(NSInteger)offset {
@@ -55,9 +56,14 @@
     KBSliderMode _sliderMode;
     UILabel *durationLabel;
     UILabel *currentTimeLabel;
+    UILabel *scrubTimeLabel;
     NSTimeInterval _currentTime;
     NSTimeInterval _totalDuration;
     NSTimer *_fadeOutTimer;
+    UIImageView *_leftHintImageView;
+    UIImageView *_rightHintImageView;
+    KBScrubMode _scrubMode;
+    NSLayoutConstraint *_trackViewHeightAnchor;
 }
 
 @property CGFloat trackViewHeight;
@@ -107,20 +113,33 @@
 
 @implementation KBSlider
 
+- (void)setScrubMode:(KBScrubMode)scrubMode {
+    _scrubMode = scrubMode;
+    [self updateHintImages];
+}
+
+- (KBScrubMode)scrubMode {
+    return _scrubMode;
+}
+
 - (BOOL)isPlaying {
+    if (self.avPlayer) return self.avPlayer.timeControlStatus == AVPlayerTimeControlStatusPlaying;
     return _isPlaying;
 }
 
 - (void)setIsPlaying:(BOOL)isPlaying {
+    LOG_SELF;
     _isPlaying = isPlaying;
     if (self.sliderMode == KBSliderModeTransport) {
         self.scrubView.hidden = isPlaying;
+        scrubTimeLabel.hidden = isPlaying && !self.isScrubbing;
     }
 }
 
 - (void)initializeDefaults {
     _defaultFadeOut = true;
     _fadeOutTransport = _defaultFadeOut;
+    _scrubMode = KBScrubModeNone;
     _trackViewHeight = 5;
     _thumbSize = 30;
     _animationDuration = 0.3;
@@ -158,6 +177,63 @@
 
 #pragma mark KBSliderModeTransport exclusives
 
+- (void)createHintImageViews {
+    if (_leftHintImageView && _rightHintImageView) {
+        return;
+    }
+    _leftHintImageView = [[UIImageView alloc] initWithFrame:CGRectZero];
+    _leftHintImageView.contentMode = UIViewContentModeScaleAspectFit;
+    _leftHintImageView.translatesAutoresizingMaskIntoConstraints = false;
+    [self addSubview:_leftHintImageView];
+    _rightHintImageView = [[UIImageView alloc] initWithFrame:CGRectZero];
+    _rightHintImageView.contentMode = UIViewContentModeScaleAspectFit;
+    _rightHintImageView.translatesAutoresizingMaskIntoConstraints = false;
+    [self addSubview:_rightHintImageView];
+    [_leftHintImageView.rightAnchor constraintEqualToAnchor:currentTimeLabel.leftAnchor constant:-10].active = true;
+    [_leftHintImageView.centerYAnchor constraintEqualToAnchor:currentTimeLabel.centerYAnchor].active = true;
+    [_rightHintImageView.leftAnchor constraintEqualToAnchor:currentTimeLabel.rightAnchor constant:10].active = true;
+    [_rightHintImageView.centerYAnchor constraintEqualToAnchor:currentTimeLabel.centerYAnchor].active = true;
+    _rightHintImageView.alpha = 0;
+    _leftHintImageView.alpha = 0;
+    [_leftHintImageView setImage:[KBSliderImages backwardsImage]];
+    [_rightHintImageView setImage:[KBSliderImages forwardsImage]];
+}
+
+- (void)updateHintImages {
+    switch (self.scrubMode) {
+        case KBScrubModeNone:
+        case KBScrubModeJumping:
+            _leftHintImageView.alpha = 0;
+            _rightHintImageView.alpha = 0;
+            break;
+            
+        case KBScrubModeRewind:
+            _leftHintImageView.alpha = 1;
+            _rightHintImageView.alpha = 0;
+            _leftHintImageView.image = [KBSliderImages backwardsImage];
+            break;
+            
+        case KBScrubModeFastForward:
+            _leftHintImageView.alpha = 0;
+            _rightHintImageView.alpha = 1;
+            _rightHintImageView.image = [KBSliderImages forwardsImage];
+            break;
+            
+        case KBScrubModeSkippingForwards:
+            _leftHintImageView.alpha = 0;
+            _rightHintImageView.alpha = 1;
+            _rightHintImageView.image = [KBSliderImages skipForwardsImage];
+            break;
+            
+        case KBScrubModeSkippingBackwards:
+            _leftHintImageView.alpha = 1;
+            _rightHintImageView.alpha = 0;
+            _leftHintImageView.image = [KBSliderImages skipBackwardsImage];
+            break;
+        
+    }
+}
+
 - (void)_startFadeOutTimer {
     [self stopFadeOutTimer];
     _fadeOutTimer = [NSTimer scheduledTimerWithTimeInterval:3.0 repeats:false block:^(NSTimer * _Nonnull timer) {
@@ -178,7 +254,7 @@
         return nil;
     }
     if (self.sliderMode == KBSliderModeTransport){
-        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel, gradient, _scrubView];
+        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel, gradient, _scrubView, scrubTimeLabel];
     } else {
         return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView];
     }
@@ -278,6 +354,10 @@
     return [[KBSlider elapsedTimeFormatter] stringFromTimeInterval:self.currentTime];
 }
 
+- (NSString *)scrubTimeFormatted {
+    return [[KBSlider elapsedTimeFormatter] stringFromTimeInterval:self.scrubValue];
+}
+
 - (NSTimeInterval)totalDuration {
     return _totalDuration;
 }
@@ -305,6 +385,9 @@
     if (durationLabel){
         durationLabel.text = [self remainingTimeFormatted];
     }
+    if (!self.isScrubbing) {
+        self.scrubValue = currentTime;
+    }
     if (CGRectIntersectsRect(durationLabel.frame, currentTimeLabel.frame)){
         durationLabel.alpha = 0.0;
     } else {
@@ -322,6 +405,17 @@
 
 - (void)setSliderMode:(KBSliderMode)sliderMode {
     _sliderMode = sliderMode;
+    if (sliderMode == KBSliderModeTransport) {
+        _trackViewHeight = 10;
+    } else {
+        _trackViewHeight = 5;
+    }
+    [self setUpTrackView];
+    [self setUpTrackViewConstraints];
+    [self setUpMinimumTrackView];
+    [self setUpMinimumTrackViewConstraints];
+    [self setUpMaximumTrackView];
+    [self setUpMaximumTrackViewConstraints];
     [self setUpThumbView];
     [self setUpThumbViewConstraints];
     [self updateStateDependantViews];
@@ -376,6 +470,7 @@
         return;
     }
     _scrubViewCenterXConstraint.constant = offset;
+    scrubTimeLabel.text = [self scrubTimeFormatted];
 }
 
 - (CGFloat)value {
@@ -565,6 +660,10 @@
         [durationLabel removeFromSuperview];
         durationLabel = nil;
     }
+    if (scrubTimeLabel){
+        [scrubTimeLabel removeFromSuperview];
+        scrubTimeLabel = nil;
+    }
     if (gradient) {
         [gradient removeFromSuperview];
         gradient = nil;
@@ -576,7 +675,13 @@
     [self removeTransportViewsIfNecessary];
     currentTimeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     currentTimeLabel.translatesAutoresizingMaskIntoConstraints = false;
+    currentTimeLabel.textAlignment = NSTextAlignmentCenter;
     [self addSubview:currentTimeLabel];
+    currentTimeLabel.layer.cornerRadius = 6;
+    currentTimeLabel.layer.masksToBounds = true;
+    currentTimeLabel.backgroundColor = [UIColor whiteColor];
+    currentTimeLabel.textColor = [UIColor blackColor];
+    [currentTimeLabel.widthAnchor constraintGreaterThanOrEqualToConstant:76].active = true;
     [currentTimeLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     durationLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     durationLabel.translatesAutoresizingMaskIntoConstraints = false;
@@ -589,13 +694,25 @@
     [durationLabel.topAnchor constraintEqualToAnchor:self.thumbView.bottomAnchor constant:5].active = true;
     [durationLabel.trailingAnchor constraintEqualToAnchor:self.trackView.trailingAnchor].active = true;
     durationLabel.text = [NSString stringWithFormat:@"%.0f", _totalDuration];
+    scrubTimeLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+    scrubTimeLabel.translatesAutoresizingMaskIntoConstraints = false;
+    scrubTimeLabel.textAlignment = NSTextAlignmentCenter;
+    [self addSubview:scrubTimeLabel];
+    [scrubTimeLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     [self setUpScrubView];
     [self setUpScrubViewConstraints];
+    [scrubTimeLabel.centerXAnchor constraintEqualToAnchor:self.scrubView.centerXAnchor].active = true;
+    [scrubTimeLabel.bottomAnchor constraintEqualToAnchor:self.scrubView.topAnchor constant:5].active = true;
     gradient = [KBGradientView standardGradientView];
     [self insertSubview:gradient atIndex:0];
+    [self createHintImageViews];
 }
 
 - (void)setUpTrackView {
+    if (_trackView) {
+        [_trackView removeFromSuperview];
+        _trackView = nil;
+    }
     _trackView = [UIImageView new];
     _trackView.layer.cornerRadius = _trackViewHeight/2;
     _trackView.backgroundColor = _defaultTrackColor;
@@ -603,6 +720,10 @@
 }
 
 - (void)setUpMinimumTrackView {
+    if (_minimumTrackView) {
+        [_minimumTrackView removeFromSuperview];
+        _minimumTrackView = nil;
+    }
     _minimumTrackView = [UIImageView new];
     _minimumTrackView.layer.cornerRadius = _trackViewHeight/2;
     _minimumTrackView.backgroundColor = _minimumTrackTintColor;
@@ -610,6 +731,10 @@
 }
 
 - (void)setUpMaximumTrackView {
+    if (_maximumTrackView) {
+        [_maximumTrackView removeFromSuperview];
+        _maximumTrackView = nil;
+    }
     _maximumTrackView = [UIImageView new];
     _maximumTrackView.layer.cornerRadius = _trackViewHeight/2;
     _maximumTrackView.backgroundColor = _maximumTrackTintColor;
@@ -622,7 +747,12 @@
     [_trackView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor].active = true;
     [_trackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor].active = true;
     [_trackView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = true;
-    [_trackView.heightAnchor constraintEqualToConstant:_trackViewHeight].active = true;
+    if (_trackViewHeightAnchor) {
+        [NSLayoutConstraint deactivateConstraints:@[_trackViewHeightAnchor]];
+        _trackViewHeightAnchor = nil;
+    }
+    _trackViewHeightAnchor = [_trackView.heightAnchor constraintEqualToConstant:_trackViewHeight];
+    _trackViewHeightAnchor.active = true;
     
 }
 
@@ -648,7 +778,7 @@
     _thumbView.translatesAutoresizingMaskIntoConstraints = false;
     [_thumbView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = true;
     if (_sliderMode == KBSliderModeTransport){
-        [_thumbView.heightAnchor constraintEqualToConstant:30].active = true;
+        [_thumbView.heightAnchor constraintEqualToConstant:10].active = true;
         [_thumbView.widthAnchor constraintEqualToConstant:1].active = true;
     } else {
         [_thumbView.heightAnchor constraintEqualToConstant:_thumbSize].active = true;

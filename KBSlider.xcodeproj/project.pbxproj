@@ -14,6 +14,7 @@
 		325D7B0225965E2800CC6B10 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 325D7B0025965E2800CC6B10 /* LaunchScreen.storyboard */; };
 		325D7B0525965E2800CC6B10 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 325D7B0425965E2800CC6B10 /* main.m */; };
 		325D7B0D25965E6600CC6B10 /* KBSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 325D7B0C25965E6600CC6B10 /* KBSlider.m */; };
+		329F8D142786B57B007923A9 /* KBSliderImages.m in Sources */ = {isa = PBXBuildFile; fileRef = 329F8D132786B57B007923A9 /* KBSliderImages.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,12 @@
 		325D7B0425965E2800CC6B10 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		325D7B0B25965E6600CC6B10 /* KBSlider.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KBSlider.h; sourceTree = "<group>"; };
 		325D7B0C25965E6600CC6B10 /* KBSlider.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = KBSlider.m; sourceTree = "<group>"; };
+		329F8D0D2786B2F1007923A9 /* backward.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = backward.h; sourceTree = "<group>"; };
+		329F8D0E2786B2F1007923A9 /* goforward.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = goforward.h; sourceTree = "<group>"; };
+		329F8D0F2786B2F1007923A9 /* gobackward.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gobackward.h; sourceTree = "<group>"; };
+		329F8D102786B2F1007923A9 /* KBSliderImages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KBSliderImages.h; sourceTree = "<group>"; };
+		329F8D112786B2F1007923A9 /* forward.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = forward.h; sourceTree = "<group>"; };
+		329F8D132786B57B007923A9 /* KBSliderImages.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = KBSliderImages.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,9 +82,23 @@
 			path = KBSlider;
 			sourceTree = "<group>";
 		};
+		329F8D0C2786B2F1007923A9 /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				329F8D0D2786B2F1007923A9 /* backward.h */,
+				329F8D0E2786B2F1007923A9 /* goforward.h */,
+				329F8D0F2786B2F1007923A9 /* gobackward.h */,
+				329F8D112786B2F1007923A9 /* forward.h */,
+				329F8D102786B2F1007923A9 /* KBSliderImages.h */,
+				329F8D132786B57B007923A9 /* KBSliderImages.m */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
 		32C5850925BF89A00021C9FC /* Slider */ = {
 			isa = PBXGroup;
 			children = (
+				329F8D0C2786B2F1007923A9 /* Images */,
 				325D7B0B25965E6600CC6B10 /* KBSlider.h */,
 				325D7B0C25965E6600CC6B10 /* KBSlider.m */,
 			);
@@ -156,6 +177,7 @@
 			files = (
 				325D7AFA25965E2600CC6B10 /* ViewController.m in Sources */,
 				325D7B0D25965E6600CC6B10 /* KBSlider.m in Sources */,
+				329F8D142786B57B007923A9 /* KBSliderImages.m in Sources */,
 				325D7B0525965E2800CC6B10 /* main.m in Sources */,
 				325D7AF725965E2600CC6B10 /* AppDelegate.m in Sources */,
 			);

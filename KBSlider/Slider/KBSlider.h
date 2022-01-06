@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AVKit/AVKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,6 +19,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, readonly, strong) CAGradientLayer *layer;
 +(instancetype)standardGradientView;
 @end
+
+typedef NS_ENUM(NSInteger, KBScrubMode) {
+    KBScrubModeNone,
+    KBScrubModeSkippingBackwards,
+    KBScrubModeSkippingForwards,
+    KBScrubModeJumping, //jumping back and forth at full intervals
+    KBScrubModeRewind,
+    KBScrubModeFastForward,
+};
 
 typedef NS_ENUM(NSInteger, DPadState) {
     DPadStateSelect,
@@ -60,6 +70,8 @@ typedef NS_ENUM(NSInteger, KBSliderMode) {
 @property (nonatomic, copy, nullable) void (^timeSelectedBlock)(CGFloat currentTime); //transport mode only, is called when a slider value is selected when scrubbing.
 @property BOOL fadeOutTransport;
 @property KBSliderMode sliderMode;
+@property KBScrubMode scrubMode;
+@property (nonatomic, weak) AVPlayer *avPlayer; //optional
 
 + (NSDateComponentsFormatter *)sharedTimeFormatter;
 - (NSTimeInterval)remainingTime;
