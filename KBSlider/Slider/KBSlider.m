@@ -10,6 +10,90 @@
 #import <GameController/GameController.h>
 #import "KBSliderImages.h"
 
+@interface UIGestureRecognizer (helper)
+
+- (NSString *)stringForState;
+
+@end
+
+@implementation UIGestureRecognizer (helper)
+
+- (NSString *)stringForState {
+    switch(self.state){
+        case UIGestureRecognizerStatePossible: return @"UIGestureRecognizerStatePossible";
+        case UIGestureRecognizerStateBegan: return @"UIGestureRecognizerStateBegan";
+        case UIGestureRecognizerStateChanged: return @"UIGestureRecognizerStateChanged";
+        case UIGestureRecognizerStateEnded: return @"UIGestureRecognizerStateEnded";
+        case UIGestureRecognizerStateCancelled: return @"UIGestureRecognizerStateCancelled";
+        case UIGestureRecognizerStateFailed: return @"UIGestureRecognizerStateFailed";
+    }
+    
+    return nil;
+}
+
+@end
+
+@interface KBFocusTensionGestureRecognizer: UIPanGestureRecognizer
+@property (assign,setter=_setTouching:,nonatomic) BOOL isTouching;
+-(BOOL)isTouching;
+-(void)_setTouching:(BOOL)touching;
+@end
+
+@interface KBFocusTensionGestureRecognizer () {
+    BOOL _isTouching;
+    double _lastTouchesBeganTime;
+}
+@end
+
+@implementation KBFocusTensionGestureRecognizer
+
+-(BOOL)isTouching {
+    return _isTouching;
+}
+-(void)_setTouching:(BOOL)touching {
+    _isTouching = touching;
+}
+
+- (BOOL)shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    BOOL orig = [super shouldRequireFailureOfGestureRecognizer:otherGestureRecognizer];
+    //DLog(@"shouldRequireFailureOfGestureRecognizer: %@ = %d", otherGestureRecognizer,orig);
+    return orig;
+}
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    //DLog(@"touches began: %@", [self stringForState]);
+    [self _setTouching:true];
+    UITouch *firstTouch = [[touches allObjects] firstObject];
+    
+    if (firstTouch.gestureRecognizers[0].state == UIGestureRecognizerStatePossible){
+        //firstTouch.gestureRecognizers[0].state = UIGestureRecognizerStateBegan;
+    }
+    CGPoint location = [firstTouch locationInView:self.view];
+    CGPoint previous = [firstTouch previousLocationInView:self.view];
+    //DLog(@"firstTouch: now %@ previous: %@", NSStringFromCGPoint(location), NSStringFromCGPoint(previous));
+    _lastTouchesBeganTime = [firstTouch timestamp];
+    [super touchesBegan:touches withEvent:event];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    //DLog(@"touches moved: %@",[self stringForState]);
+    UITouch *firstTouch = [[touches allObjects] firstObject];
+    CGPoint location = [firstTouch locationInView:self.view];
+    CGPoint previous = [firstTouch previousLocationInView:self.view];
+    //DLog(@"moved: now %@ previous: %@", NSStringFromCGPoint(location), NSStringFromCGPoint(previous));
+    [super touchesMoved:touches withEvent:event];
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    [self _setTouching:false];
+    UITouch *firstTouch = [[touches allObjects] firstObject];
+    //DLog(@"ended: %@", firstTouch);
+    //[super touchesEnded:touches withEvent:event];
+    DLog(@"touches ended: %@", [self stringForState]);
+}
+
+@end
+
 @implementation NSThread (additions)
 + (NSArray *)stackFrameTruncatedTo:(NSInteger)offset {
     if ([[NSThread callStackSymbols] count] < offset){
@@ -60,6 +144,7 @@
     NSTimeInterval _currentTime;
     NSTimeInterval _totalDuration;
     NSTimer *_fadeOutTimer;
+    NSTimeInterval _touchBeganTime;
     UIImageView *_leftHintImageView;
     UIImageView *_rightHintImageView;
     KBScrubMode _scrubMode;
@@ -97,7 +182,7 @@
 @property NSMutableDictionary *maximumTrackViewImages; //[UInt: UIImage] - not an allowed dict type in obj-c
 @property UIImageView *maximumTrackView;
 
-@property UIPanGestureRecognizer *panGestureRecognizer;
+@property KBFocusTensionGestureRecognizer *panGestureRecognizer;
 @property UITapGestureRecognizer *leftTapGestureRecognizer;
 @property UITapGestureRecognizer *rightTapGestureRecognizer;
 @property NSLayoutConstraint *thumbViewCenterXConstraint;
@@ -133,6 +218,9 @@
     if (self.sliderMode == KBSliderModeTransport) {
         self.scrubView.hidden = isPlaying;
         scrubTimeLabel.hidden = isPlaying && !self.isScrubbing;
+        if (isPlaying){
+            [self setScrubMode:KBScrubModeNone];
+        }
     }
 }
 
@@ -195,14 +283,16 @@
     [_rightHintImageView.centerYAnchor constraintEqualToAnchor:currentTimeLabel.centerYAnchor].active = true;
     _rightHintImageView.alpha = 0;
     _leftHintImageView.alpha = 0;
-    [_leftHintImageView setImage:[KBSliderImages backwardsImage]];
-    [_rightHintImageView setImage:[KBSliderImages forwardsImage]];
+    //[_leftHintImageView setImage:[KBSliderImages backwardsImage]];
+    //[_rightHintImageView setImage:[KBSliderImages forwardsImage]];
 }
 
 - (void)updateHintImages {
     switch (self.scrubMode) {
         case KBScrubModeNone:
         case KBScrubModeJumping:
+            _rightHintImageView.image = nil;
+            _leftHintImageView.image = nil;
             _leftHintImageView.alpha = 0;
             _rightHintImageView.alpha = 0;
             break;
@@ -254,7 +344,7 @@
         return nil;
     }
     if (self.sliderMode == KBSliderModeTransport){
-        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel, gradient, _scrubView, scrubTimeLabel];
+        return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView, durationLabel, currentTimeLabel, gradient, _scrubView, scrubTimeLabel, _leftHintImageView, _rightHintImageView];
     } else {
         return @[self.thumbView, self.trackView, self.minimumTrackView, self.maximumTrackView];
     }
@@ -477,6 +567,16 @@
     return _storedValue;
 }
 
+- (void)connectSiriGCControllerIfNecessary {
+    GCController *first = [[GCController controllers] firstObject];
+    if (first) {
+        GCMicroGamepad *micro = [first microGamepad];
+        if (micro) {
+            [[NSNotificationCenter defaultCenter] postNotificationName:GCControllerDidConnectNotification object:first];
+        }
+    }
+}
+
 - (void)setValue:(CGFloat)newValue {
     _storedValue = MIN(_maximumValue, newValue);
     _storedValue = MAX(_minimumValue, _storedValue);
@@ -574,6 +674,7 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controllerConnected:) name:GCControllerDidConnectNotification object:nil];
     [self updateStateDependantViews];
+    [self connectSiriGCControllerIfNecessary];
 }
 
 - (void)setValue:(CGFloat)value animated:(BOOL)animated {
@@ -800,7 +901,7 @@
 
 - (void)setUpGestures {
     
-    _panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureWasTriggered:)];
+    _panGestureRecognizer = [[KBFocusTensionGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureWasTriggered:)];
     [self addGestureRecognizer:_panGestureRecognizer];
     
     _leftTapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(leftTapWasTriggered)];
@@ -838,18 +939,28 @@
 
 - (void)controllerConnected:(NSNotification *)n {
     GCController *controller = [n object];
-    KBSLog(@"controller: %@ micro: %@", controller, [controller microGamepad]);
+    NSLog(@"[Ethereal] controller: %@ micro: %@", controller, [controller microGamepad]);
     GCMicroGamepad *micro = [controller microGamepad];
     if (!micro)return;
     
-    CGFloat threshold = 0.7;
+    CGFloat threshold = 0.6f;
     micro.reportsAbsoluteDpadValues = true;
     micro.dpad.valueChangedHandler = ^(GCControllerDirectionPad * _Nonnull dpad, float xValue, float yValue) {
+        //NSLog(@"[Ethereal] xValue: %f", xValue);
         if (xValue < -threshold){
+            if (self.dPadState != DPadStateLeft) {
+                NSLog(@"[Ethereal] DPadStateLeft");
+            }
             self.dPadState = DPadStateLeft;
         } else if (xValue > threshold){
+            if (self.dPadState != DPadStateRight) {
+                NSLog(@"[Ethereal] DPadStateRight");
+            }
             self.dPadState = DPadStateRight;
         } else {
+            if (self.dPadState != DPadStateSelect) {
+                NSLog(@"[Ethereal] DPadStateSelect");
+            }
             self.dPadState = DPadStateSelect;
         }
     };
@@ -909,6 +1020,60 @@
 
 #pragma mark - Actions
 
+- (void)nowPlayingGestureWasTriggered:(UIPanGestureRecognizer *)panGestureRecognizer {
+    if ([self isVerticalGesture:panGestureRecognizer]){
+        //DLog(@"is vertical gesture?");
+        //return;
+    }
+    CGFloat translation = [panGestureRecognizer translationInView:self].x;
+    CGFloat velocity = [panGestureRecognizer velocityInView:self].x;
+    NSTimeInterval inBetweenTime = 0;
+    switch(panGestureRecognizer.state){
+        case UIGestureRecognizerStateBegan:
+            _touchBeganTime = [[NSDate date] timeIntervalSince1970];
+            NSLog(@"[Ethereal] began translation: %.0f velocity: %.0f at interval: %f dpadstate: %lu", translation, velocity, _touchBeganTime, _dPadState);
+            break;
+        
+        case UIGestureRecognizerStateChanged:
+            inBetweenTime =[[NSDate date] timeIntervalSince1970] - _touchBeganTime;
+            if (_dPadState == DPadStateRight){
+                
+                
+                //if (self.avPlayer.rate != 8.0){
+                    NSLog(@"[Ethereal] fast forward?");
+                //    self.avPlayer.rate = MIN(self.avPlayer.rate + 8.0, 8.0);
+                //}
+                [self setScrubMode:KBScrubModeFastForward];
+            } else if (_dPadState == DPadStateLeft){
+                //if (self.avPlayer.rate != -8.0){
+                    NSLog(@"[Ethereal] rewind?");
+                [self setScrubMode:KBScrubModeRewind];
+                  //  self.avPlayer.rate = MIN(self.avPlayer.rate - 8.0, - 8.0);
+                //}
+                //self.avPlayer.play;
+            } else {
+                
+                [self setScrubMode:KBScrubModeNone];
+                //self.avPlayer.rate = 1.0;
+                //[self.avPlayer play];
+            }
+            NSLog(@"[Ethereal] changed translation: %.0f velocity: %.0f at interval: %f, dpadstate: %lu", translation, velocity, inBetweenTime, _dPadState);
+            break;
+            
+        case UIGestureRecognizerStateEnded:
+        case UIGestureRecognizerStateCancelled:
+            //self.avPlayer.rate = 1.0;
+            //[self.avPlayer play];
+            inBetweenTime =[[NSDate date] timeIntervalSince1970] - _touchBeganTime;
+            NSLog(@"[Ethereal] ended translation: %.0f velocity: %.0f at interval: %f", translation, velocity, inBetweenTime);
+            break;
+            
+        default:
+            break;
+    }
+    
+}
+
 - (void)panGestureWasTriggered:(UIPanGestureRecognizer *)panGestureRecognizer {
     
     if (self.sliderMode == KBSliderModeTransport){
@@ -916,7 +1081,8 @@
             [self fadeIn];
         }
         if (self.isPlaying){
-            //NSLog(@"isplaying return");
+            //NSLog(@"[Ethereal] isplaying return");
+            [self nowPlayingGestureWasTriggered:panGestureRecognizer];
             return;
         }
     }
@@ -978,6 +1144,7 @@
 }
 
 - (void)leftTapWasTriggered {
+    LOG_SELF;
     if ([self shouldMoveScrubView]) return;
     CGFloat newValue = [self value]-_stepValue;
     [self setCurrentTime:newValue];
@@ -1011,6 +1178,7 @@
 }
 
 - (void)rightTapWasTriggered {
+    LOG_SELF;
     if ([self shouldMoveScrubView]) return;
     CGFloat newValue = [self value]+_stepValue;
     [self setCurrentTime:newValue];
