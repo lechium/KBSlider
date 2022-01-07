@@ -148,7 +148,8 @@
     UIImageView *_leftHintImageView;
     UIImageView *_rightHintImageView;
     KBScrubMode _scrubMode;
-    NSLayoutConstraint *_trackViewHeightAnchor;
+    NSLayoutConstraint *_trackViewHeightConstraint;
+    NSLayoutConstraint *_currentTimeLabelWidthConstraint;
     BOOL _displaysCurrentTime;
     BOOL _displaysRemainingTime;
 }
@@ -249,7 +250,7 @@
     _storedValue = _defaultValue;
     _dPadState = DPadStateSelect;
     _isContinuous = _defaultIsContinuous;
-    
+    _displaysRemainingTime = true;
     _minimumTrackViewImages = [NSMutableDictionary new];
     _maximumTrackViewImages = [NSMutableDictionary new];
     _trackViewImages = [NSMutableDictionary new];
@@ -287,6 +288,18 @@
     _leftHintImageView.alpha = 0;
     //[_leftHintImageView setImage:[KBSliderImages backwardsImage]];
     //[_rightHintImageView setImage:[KBSliderImages forwardsImage]];
+}
+
+- (void)toggleVisibleTimerLabels {
+    if (self.displaysRemainingTime) {
+        [self setDisplaysCurrentTime:true];
+    } else if (self.displaysCurrentTime) {
+        [self setDisplaysCurrentTime:false];
+        currentTimeLabel.alpha = 0;
+        durationLabel.alpha = 0;
+    } else {
+        [self setDisplaysRemainingTime:true];
+    }
 }
 
 - (void)updateHintImages {
@@ -455,8 +468,13 @@
     if (displaysRemainingTime && _displaysCurrentTime) {
         [self setDisplaysCurrentTime:false];
     }
-    currentTimeLabel.text = [self elapsedTimeFormatted];
-    durationLabel.text = [self remainingTimeFormatted];
+    if (displaysRemainingTime){
+        _currentTimeLabelWidthConstraint.constant = 76;
+        currentTimeLabel.alpha = 1.0;
+        durationLabel.alpha = 1.0;
+        currentTimeLabel.text = [self elapsedTimeFormatted];
+        durationLabel.text = [self remainingTimeFormatted];
+    }
 }
 
 - (BOOL)displaysCurrentTime {
@@ -468,8 +486,13 @@
     if (displaysCurrentTime && _displaysRemainingTime) {
         [self setDisplaysRemainingTime:false];
     }
-    currentTimeLabel.text = [self currentDateFormatted];
-    durationLabel.text = [self finishDateFormatted];
+    if (displaysCurrentTime){
+        _currentTimeLabelWidthConstraint.constant = 120;
+        currentTimeLabel.alpha = 1.0;
+        durationLabel.alpha = 1.0;
+        currentTimeLabel.text = [self currentDateFormatted];
+        durationLabel.text = [self finishDateFormatted];
+    }
 }
 
 
@@ -840,7 +863,8 @@
     currentTimeLabel.layer.masksToBounds = true;
     currentTimeLabel.backgroundColor = [UIColor whiteColor];
     currentTimeLabel.textColor = [UIColor blackColor];
-    [currentTimeLabel.widthAnchor constraintGreaterThanOrEqualToConstant:100].active = true;
+    _currentTimeLabelWidthConstraint = [currentTimeLabel.widthAnchor constraintGreaterThanOrEqualToConstant:76];
+    _currentTimeLabelWidthConstraint.active = true;
     [currentTimeLabel setFont:[UIFont preferredFontForTextStyle:UIFontTextStyleCaption2]];
     durationLabel = [[UILabel alloc] initWithFrame:CGRectZero];
     durationLabel.translatesAutoresizingMaskIntoConstraints = false;
@@ -906,12 +930,12 @@
     [_trackView.leadingAnchor constraintEqualToAnchor:self.leadingAnchor].active = true;
     [_trackView.trailingAnchor constraintEqualToAnchor:self.trailingAnchor].active = true;
     [_trackView.centerYAnchor constraintEqualToAnchor:self.centerYAnchor].active = true;
-    if (_trackViewHeightAnchor) {
-        [NSLayoutConstraint deactivateConstraints:@[_trackViewHeightAnchor]];
-        _trackViewHeightAnchor = nil;
+    if (_trackViewHeightConstraint) {
+        [NSLayoutConstraint deactivateConstraints:@[_trackViewHeightConstraint]];
+        _trackViewHeightConstraint = nil;
     }
-    _trackViewHeightAnchor = [_trackView.heightAnchor constraintEqualToConstant:_trackViewHeight];
-    _trackViewHeightAnchor.active = true;
+    _trackViewHeightConstraint = [_trackView.heightAnchor constraintEqualToConstant:_trackViewHeight];
+    _trackViewHeightConstraint.active = true;
     
 }
 
