@@ -31,6 +31,11 @@
     _kbSlider.minimumTrackTintColor = [UIColor orangeColor];
     _kbSlider.fadeOutTransport = false;
     _kbSlider.sliderMode = KBSliderModeTransport;
+    _kbSlider.isPlaying = true;
+    [self.kbSlider setTotalDuration:60*10];
+    [self.kbSlider setCurrentTime:1.0];
+    
+    [self startTimer];
     //_kbSlider.displaysCurrentTime = true;
     _kbSlider.timeSelectedBlock = ^(CGFloat currentTime) {
         NSLog(@"scrubbing time selected: %f actualTime: %f", currentTime, _kbSlider.value);

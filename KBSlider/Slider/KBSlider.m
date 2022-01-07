@@ -1208,6 +1208,7 @@
     [self setCurrentTime:newValue];
     [self setValue:newValue animated:true];
     [self fadeInIfNecessary];
+    [self setScrubMode:KBScrubModeSkippingBackwards];
 }
 
 - (void)fadeInIfNecessary {
@@ -1242,9 +1243,11 @@
     [self setCurrentTime:newValue];
     [self setValue:newValue animated:true];
     [self fadeInIfNecessary];
+    [self setScrubMode:KBScrubModeSkippingForwards];
 }
 
 - (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
+    LOG_SELF;
     [self fadeInIfNecessary];
     for (UIPress *press in presses){
         switch (press.type) {
