@@ -184,7 +184,7 @@
 @property NSMutableDictionary *maximumTrackViewImages; //[UInt: UIImage] - not an allowed dict type in obj-c
 @property UIImageView *maximumTrackView;
 
-@property KBFocusTensionGestureRecognizer *panGestureRecognizer;
+@property UIPanGestureRecognizer *panGestureRecognizer;
 @property UITapGestureRecognizer *leftTapGestureRecognizer;
 @property UITapGestureRecognizer *rightTapGestureRecognizer;
 @property NSLayoutConstraint *thumbViewCenterXConstraint;
@@ -959,7 +959,7 @@
 
 - (void)setUpGestures {
     
-    _panGestureRecognizer = [[KBFocusTensionGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureWasTriggered:)];
+    _panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureWasTriggered:)];
     [self addGestureRecognizer:_panGestureRecognizer];
     
     _leftTapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(leftTapWasTriggered)];
@@ -1140,7 +1140,7 @@
         }
         if (self.isPlaying){
             //NSLog(@"[Ethereal] isplaying return");
-            [self nowPlayingGestureWasTriggered:panGestureRecognizer];
+            //[self nowPlayingGestureWasTriggered:panGestureRecognizer];
             return;
         }
     }
