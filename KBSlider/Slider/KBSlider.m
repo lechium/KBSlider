@@ -578,7 +578,9 @@
     _sliderMode = sliderMode;
     if (sliderMode == KBSliderModeTransport) {
         _trackViewHeight = 10;
+        _focusScaleFactor = 1.00;
     } else {
+        _focusScaleFactor = 1.05;
         _trackViewHeight = 5;
     }
     [self setUpTrackView];
